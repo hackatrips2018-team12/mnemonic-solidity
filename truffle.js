@@ -1,5 +1,5 @@
 var HDWalletProvider = require("truffle-hdwallet-provider");
-var mnemonic = "orange banana";
+var mnemonic = "stairs repeat useless cram pet comic junior vehicle worry banner soda echo";
 
 module.exports = {
   networks: {
@@ -10,7 +10,7 @@ module.exports = {
     },
     ropsten: {
       provider: function() {
-        return new HDWalletProvider(mnemonic, "https://ropsten.infura.io/LGYfoxWqw7tO8gxMlrjt")
+        return new HDWalletProvider(mnemonic, "https://ropsten.infura.io/LGYfoxWqw7tO8gxMlrjt", 2);
       },
       network_id: 3
     }        
