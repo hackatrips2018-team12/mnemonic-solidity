@@ -5,6 +5,7 @@ import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 contract MnemonicVault is Ownable {
 
   struct Document {
+    uint id;
     string name;
     string key;  
     address issuer;
@@ -32,13 +33,28 @@ contract MnemonicVault is Ownable {
     GrantRequestStatus status;
   }
 
-  uint totalDocuments;
+  uint docIndex;
   mapping(address => mapping(string => Document)) documents;
   mapping(address => mapping(string => GrantRequest)) grants;
   mapping(address => mapping(string => Claim)) claims;  
-  
+  mapping(uint => Document) allDocuments;
 
-  function retrieveDocument() view
+
+  function MnemonicVault() public {
+    docIndex = 0;
+  }
+
+
+  function getTotalDocuments() view
+      public
+      onlyOwner()
+      returns (uint _totalDocuments)
+  {
+    return docIndex;
+  }
+
+
+  function getDocument(uint _id) view
       public
       onlyOwner()
       returns (
@@ -50,9 +66,32 @@ contract MnemonicVault is Ownable {
     	uint _expirationTime,
     	string _offchainUrl)
   {
-    Document memory doc = documents[_issuer][_key];
+    Document memory doc = allDocuments[_id];
     return (doc.name,
     	    doc.key,
+	    doc.issuer,
+	    doc.issuerName,
+	    doc.issueTime,
+	    doc.expirationTime,
+	    doc.offchainUrl);
+  }
+
+
+  function retrieveDocument(string _key) view
+      public
+      onlyOwner()
+      returns (
+        uint _id,
+        string _name,
+    	address _issuer,
+    	string _issuerName,
+    	uint _issueTime,
+    	uint _expirationTime,
+    	string _offchainUrl)
+  {
+    Document memory doc = documents[_issuer][_key];
+    return (doc.id,
+            doc.name,
 	    doc.issuer,
 	    doc.issuerName,
 	    doc.issueTime,
@@ -73,8 +112,10 @@ contract MnemonicVault is Ownable {
 
     address issuer = msg.sender;
     uint issueTime = now;
+    docIndex += 1;
     
     Document memory doc = Document(
+      docIndex,
       _name,
       _key,
       issuer,
@@ -82,9 +123,9 @@ contract MnemonicVault is Ownable {
       issueTime,
       _expirationTime,
       _offchainUrl);
-      
+
     documents[issuer][_key] = doc;
-    totalDocuments += 1;
+    allDocuments[docIndex] = doc;    
   }
 
 }
