@@ -12,7 +12,6 @@ contract MnemonicVault is Ownable {
     uint issueTime;
     uint expirationTime;
     string offchainUrl;
-    Claim[] claims;
   }
 
   struct Claim {
@@ -36,6 +35,7 @@ contract MnemonicVault is Ownable {
   uint totalDocuments;
   mapping(address => mapping(string => Document)) documents;
   mapping(address => mapping(string => GrantRequest)) grants;
+  mapping(address => mapping(string => Claim)) claims;  
   
 
   function retrieveDocument() view
@@ -59,6 +59,32 @@ contract MnemonicVault is Ownable {
 	    doc.expirationTime,
 	    doc.offchainUrl);
   }
-  
+
+
+  function addDocument(
+        string _name,
+    	string _key,
+    	string _issuerName,
+    	uint _expirationTime,
+    	string _offchainUrl)
+	public
+  {
+    require (_expirationTime > now);
+
+    address issuer = msg.sender;
+    uint issueTime = now;
+    
+    Document memory doc = Document(
+      _name,
+      _key,
+      issuer,
+      _issuerName,
+      issueTime,
+      _expirationTime,
+      _offchainUrl);
+      
+    documents[issuer][_key] = doc;
+    totalDocuments += 1;
+  }
 
 }
