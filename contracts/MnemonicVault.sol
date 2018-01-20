@@ -35,13 +35,16 @@ contract MnemonicVault is Ownable {
 
   uint docIndex;
   mapping(address => mapping(string => Document)) documents;
-  mapping(address => mapping(string => GrantRequest)) grants;
+  mapping(address => mapping(address => mapping(string => GrantRequest))) grants;
   mapping(address => mapping(string => Claim)) claims;  
   mapping(uint => Document) allDocuments;
 
-
-  modifier onlyWithGrant(string _key) {
-    GrantRequest storage grant = grants[msg.sender][_key];
+  event GrantRequested(address _issuer, string _key, address _requestor, string _requestorName);
+  event GrantAccepted(address _issuer, string _key, address _requestor);
+  event GrantRejected(address _issuer, string _key, address _requestor);  
+ 
+  modifier onlyWithGrant(address _issuer, string _key) {
+    GrantRequest storage grant = grants[msg.sender][_issuer][_key];
     require(grant.status == GrantRequestStatus.GRANTED);
     _;
   }
@@ -84,23 +87,21 @@ contract MnemonicVault is Ownable {
   }
 
 
-  function retrieveDocument(string _key) view
+  function retrieveDocument(address _issuer, string _key) view
       public
-      onlyWithGrant(_key)
+      onlyWithGrant(_issuer, _key)
       returns (
         uint _id,
         string _name,
-    	address _issuer,
     	string _issuerName,
     	uint _issueTime,
     	uint _expirationTime,
     	string _offchainUrl)
   {
-    address issuer = msg.sender;
-    Document memory doc = documents[issuer][_key];
+    address requestor = msg.sender;
+    Document memory doc = documents[_issuer][_key];
     return (doc.id,
             doc.name,
-	    doc.issuer,
 	    doc.issuerName,
 	    doc.issueTime,
 	    doc.expirationTime,
@@ -108,7 +109,7 @@ contract MnemonicVault is Ownable {
   }
 
 
-  function grant(
+  function requestGrant(
       address _issuer,
       string _key,
       string _requestorName)
@@ -123,9 +124,37 @@ contract MnemonicVault is Ownable {
       now,
       now + 60 * 60 * 1000,
       GrantRequestStatus.PENDING);
-    grants[requestor][_key] = request;
+    grants[requestor][_issuer][_key] = request;
+    GrantRequested(_issuer, _key, requestor, _requestorName);
   }
 
+
+  function acceptGrant(
+      address _issuer,
+      string _key,
+      address _requestor)
+      onlyOwner()
+      public
+  {
+
+    GrantRequest storage request = grants[_requestor][_issuer][_key];
+    request.status = GrantRequestStatus.GRANTED;
+    GrantAccepted(_issuer, _key, _requestor);
+  }
+
+
+  function rejectGrant(
+      address _issuer,
+      string _key,
+      address _requestor)
+      onlyOwner()
+      public
+  {
+
+    GrantRequest storage request = grants[_requestor][_issuer][_key];
+    request.status = GrantRequestStatus.REJECTED;
+    GrantRejected(_issuer, _key, _requestor);
+  }
 
   function addDocument(
         string _name,
