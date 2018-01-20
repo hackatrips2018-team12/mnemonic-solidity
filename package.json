@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/hackatrips2018-team12/mnemonic-solidity#readme",
   "dependencies": {
+    "truffle-hdwallet-provider": "0.0.3",
     "zeppelin-solidity": "1.5.0"
   }
 }
