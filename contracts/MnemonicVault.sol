@@ -139,6 +139,7 @@ contract MnemonicVault is Ownable {
 
     GrantRequest storage request = grants[_requestor][_issuer][_key];
     request.status = GrantRequestStatus.GRANTED;
+    grants[_requestor][_issuer][_key] = request;
     GrantAccepted(_issuer, _key, _requestor);
   }
 
@@ -153,6 +154,7 @@ contract MnemonicVault is Ownable {
 
     GrantRequest storage request = grants[_requestor][_issuer][_key];
     request.status = GrantRequestStatus.REJECTED;
+    grants[_requestor][_issuer][_key] = request;
     GrantRejected(_issuer, _key, _requestor);
   }
 
