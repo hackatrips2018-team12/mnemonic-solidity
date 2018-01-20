@@ -21,7 +21,7 @@ contract MnemonicVault is Ownable {
     uint claimTime;
   }
 
-  enum GrantRequestStatus { Pending, Accepted, Rejected }
+  enum GrantRequestStatus { PENDING, GRANTED, REJECTED }
 
   struct GrantRequest {
     address issuer;
@@ -38,6 +38,13 @@ contract MnemonicVault is Ownable {
   mapping(address => mapping(string => GrantRequest)) grants;
   mapping(address => mapping(string => Claim)) claims;  
   mapping(uint => Document) allDocuments;
+
+
+  modifier onlyWithGrant(string _key) {
+    GrantRequest storage grant = grants[msg.sender][_key];
+    require(grant.status == GrantRequestStatus.GRANTED);
+    _;
+  }
 
 
   function MnemonicVault() public {
@@ -79,7 +86,7 @@ contract MnemonicVault is Ownable {
 
   function retrieveDocument(string _key) view
       public
-      onlyOwner()
+      onlyWithGrant(_key)
       returns (
         uint _id,
         string _name,
@@ -89,7 +96,8 @@ contract MnemonicVault is Ownable {
     	uint _expirationTime,
     	string _offchainUrl)
   {
-    Document memory doc = documents[_issuer][_key];
+    address issuer = msg.sender;
+    Document memory doc = documents[issuer][_key];
     return (doc.id,
             doc.name,
 	    doc.issuer,
@@ -97,6 +105,25 @@ contract MnemonicVault is Ownable {
 	    doc.issueTime,
 	    doc.expirationTime,
 	    doc.offchainUrl);
+  }
+
+
+  function grant(
+      address _issuer,
+      string _key,
+      string _requestorName)
+      public
+  {
+    address requestor = msg.sender;
+    GrantRequest memory request = GrantRequest(
+      _issuer,
+      _key,
+      requestor,
+      _requestorName,
+      now,
+      now + 60 * 60 * 1000,
+      GrantRequestStatus.PENDING);
+    grants[requestor][_key] = request;
   }
 
 
@@ -108,8 +135,6 @@ contract MnemonicVault is Ownable {
     	string _offchainUrl)
 	public
   {
-    require (_expirationTime > now);
-
     address issuer = msg.sender;
     uint issueTime = now;
     docIndex += 1;
@@ -127,5 +152,7 @@ contract MnemonicVault is Ownable {
     documents[issuer][_key] = doc;
     allDocuments[docIndex] = doc;    
   }
+
+
 
 }
